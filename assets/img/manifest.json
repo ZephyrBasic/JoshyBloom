@@ -1,0 +1,251 @@
+{
+  "vessels-four": {
+    "slug": "vessels-four",
+    "source": "4 cermaic pots light background.jpg",
+    "width": 1179,
+    "height": 1159,
+    "ratio": 1.0173,
+    "lqip": "data:image/webp;base64,UklGRooAAABXRUJQVlA4IH4AAABQBACdASoUABQAPu1urlIppiQiqAgBMB2JaQAAG5dsqfZCPTCDtsxMqoYAAP5UeUQNGe4F2icMgPTO40a6fwtomGZXA47DxaUBUJ21NPVyZZFhnf9QFmZLq2+65ngFe0e5nY/aV+Ljelp1cfDRPRrfpeNQd7fcWLt34OA5AAA=",
+    "widths": [
+      480,
+      800,
+      1179
+    ]
+  },
+  "vessel-sunlight": {
+    "slug": "vessel-sunlight",
+    "source": "ceramic in sunlight.jpeg",
+    "width": 3024,
+    "height": 4032,
+    "ratio": 0.75,
+    "lqip": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAACwAwCdASoPABQAPu1iqU2ppaQiMAgBMB2JZwDG9BZstrQmSzMgAAD+8rDeiKC+9zug+ch92jywRVjPLUwtLRneuYkcqC/xwQNR+VlzHMhn9APP3wNu8qk7ulHiF3244iQegY0KWAAAAA==",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "archive-child": {
+    "slug": "archive-child",
+    "source": "child joshy cozy hiphop.jpeg",
+    "width": 3024,
+    "height": 4032,
+    "ratio": 0.75,
+    "lqip": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAADwAwCdASoPABQAPu1iqU2ppaQiMAgBMB2JZQAAW+grkKM5nQk9n5gAAP7LhKsMxoYSO/zktwCYEBo7Qbl6y4rUxErxXuTU/GJyQuyvjdVu/v0lYAAAAA==",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "sculpture-fired": {
+    "slug": "sculpture-fired",
+    "source": "fired sculpture.jpeg",
+    "width": 3024,
+    "height": 4032,
+    "ratio": 0.75,
+    "lqip": "data:image/webp;base64,UklGRloAAABXRUJQVlA4IE4AAACQAwCdASoPABQAPu1mq04ppaQiMAgBMB2JZwAAUhMb7q8jyjjsANTPBHimDmRU8K2DhXfkVPGoTUtyi965U0NPEpf6YOwtB65smF8lwAA=",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "process-beach": {
+    "slug": "process-beach",
+    "source": "joshy at beach moulding clay.jpg",
+    "width": 5117,
+    "height": 3411,
+    "ratio": 1.5001,
+    "lqip": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAwBACdASoUAA0APu1iqU2ppaQiMAgBMB2JZACdMoGv/gI+6n2VKVc83QAA/RleMLVJI9XgBHbUcYlJpvfITkJwf9OvfhZPm69Aop+oHTYBeNLgpTzV12LeKB0bmeYDkT4mIuxDbwMuWN59AAA=",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "smoke-totem": {
+    "slug": "smoke-totem",
+    "source": "joshy ceramic with smoke.jpg",
+    "width": 5148,
+    "height": 7722,
+    "ratio": 0.6667,
+    "lqip": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAADQAwCdASoNABQAPu1iqk4ppaQiMAgBMB2JZwDKACHOYtpydfSj13AA/nyJuYiJfazZAk6Gup+LNJkwuYa1HUttmpmouZ/nY8wAtJyexXuZY0SKP68ZiWnx3b/03NOtMQK88PChjCuAPs8AAAA=",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "portrait-profile": {
+    "slug": "portrait-profile",
+    "source": "joshy fashion icon portrait.jpg",
+    "width": 2304,
+    "height": 2304,
+    "ratio": 1.0,
+    "lqip": "data:image/webp;base64,UklGRloAAABXRUJQVlA4IE4AAAAQBACdASoUABQAPu1qrFEppaQiqAqpMB2JaQDPoAxatAds3hvsmroiAAD+6PDspuK3E4q108H5z0yevUvlOXIkj77ywNUVWODHEeAAAAA=",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2304
+    ]
+  },
+  "portrait-full": {
+    "slug": "portrait-full",
+    "source": "joshy full frontal fashion icon.jpg",
+    "width": 2433,
+    "height": 3637,
+    "ratio": 0.669,
+    "lqip": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAADQAwCdASoNABQAPu1kqk4ppaQiMAgBMB2JYwC/OBt7Nlc1Fq0O2wAA4eykjyRzlhyb29KvTl73jBAAOq1kXlOcvUWwlh8CpfiT+Tvd8Yr7oD8H3dKP1OqjixBFtN1yq/ehyAAA",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "live-guitar": {
+    "slug": "live-guitar",
+    "source": "joshy guitar live on stage.JPG",
+    "width": 809,
+    "height": 1080,
+    "ratio": 0.7491,
+    "lqip": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAABQAwCdASoPABQAPu1iqU2ppaOiMAgBMB2JYgAAUiLbDapcAAD+5fCw81HbcqjGOm3iAFXqr+9IU9G1CeO1sxCqqeF3fz0z47g/LCpqPU+/eA9ZGjJgAA==",
+    "widths": [
+      480,
+      800,
+      809
+    ]
+  },
+  "studio-keys": {
+    "slug": "studio-keys",
+    "source": "joshy headphones keyboard.jpg",
+    "width": 1001,
+    "height": 1025,
+    "ratio": 0.9766,
+    "lqip": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAACwAwCdASoUABQAPulipE2pJaMiMAwBIB0JZwAAhK/Bo14L8tKDwAD+7uNuqxLL5bQ77/f6tu6tajRanTx64IXeReb+x2N0VxKeQAAA",
+    "widths": [
+      480,
+      800,
+      1001
+    ]
+  },
+  "portrait-balaclava": {
+    "slug": "portrait-balaclava",
+    "source": "joshy in balaclava with ceramic.jpeg",
+    "width": 3024,
+    "height": 4032,
+    "ratio": 0.75,
+    "lqip": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAADQAwCdASoPABQAPu1iqU2ppaOiMAgBMB2JYwAAUX41FTi2Nn2oIaAA8/v3gNZrQkMevkevjyfNsxDHHT9UWmMAES1+Ns9kd1+a80AA",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "portrait-urban": {
+    "slug": "portrait-urban",
+    "source": "joshy selfie urban vibe.JPEG",
+    "width": 3000,
+    "height": 4000,
+    "ratio": 0.75,
+    "lqip": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAACwAwCdASoPABQAPu1kqU2ppaOiMAgBMB2JQAqP0HAMAzELafAEAAD4RUvKl6Ac2zOxL5eQiRJfCk2FrG6iwOcRGiNhcbjg8J1Ryai7tSPscqDi5f5Ibkplh/DnOYScLuLlx37+7u314sshmmAAAA==",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "vessel-untitled-2026": {
+    "slug": "vessel-untitled-2026",
+    "source": "organic ceramic dark background untitled 2026 sold.jpeg",
+    "width": 3024,
+    "height": 4032,
+    "ratio": 0.75,
+    "lqip": "data:image/webp;base64,UklGRloAAABXRUJQVlA4IE4AAACwAwCdASoPABQAPu1iqU2ppaQiMAgBMB2JaQAASn4lSiADa561YAD+y/YBdCjmBlPSjesIGNzNuJtkmwdmyc5GWSZRtmiYh61Ahg4AAAA=",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "archive-toddler": {
+    "slug": "archive-toddler",
+    "source": "toddler joshy outdoors mic.jpeg",
+    "width": 3024,
+    "height": 4032,
+    "ratio": 0.75,
+    "lqip": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAwBACdASoPABQAPu1iqU2ppaQiMAgBMB2JQBYhGAmf8AuNYXPP58xiHsAA/tOGMQh6aAFW2P1zkcTBDh4KTgV1j9bvX3GawNC0i7YFanuQpbigjcYawF553Ud49z5EO6K4H67STivzFCAHG7WUgrp9rDNh6VgRmAA=",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "sculpture-unfired": {
+    "slug": "sculpture-unfired",
+    "source": "unfired sculpture.jpeg",
+    "width": 3024,
+    "height": 4032,
+    "ratio": 0.75,
+    "lqip": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAACwAwCdASoPABQAPu1mq04ppaQiMAgBMB2JZQC/OCHfT7LhEk4XaAD+w0RW5jVrMq6zcbgj9pEX6MhBZ+pX2pulAZHslVl9+PW/LNuO+Km1n8AA",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "protected-spirits": {
+    "slug": "protected-spirits",
+    "source": "Protected Spirits 2026 ceramic mask.jpg",
+    "width": 2880,
+    "height": 3600,
+    "ratio": 0.8,
+    "lqip": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAABwAwCdASoQABQAPu1iqU2ppaOiMAgBMB2JYwC+SCEJ4Pr5bAAA/uoD3aZ3FiB6PCult0y5sP0R+aJutf1gy6ljPhHtGVBUpnDH9gAA",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "tower-of-dreams": {
+    "slug": "tower-of-dreams",
+    "source": "alchemic circle full 7 ceramics installation with a crowd.jpg",
+    "width": 3000,
+    "height": 2000,
+    "ratio": 1.5,
+    "lqip": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAAAQBACdASoUAA0APu1iqU2ppaQiMAgBMB2JQBYdg8EeP4O5Pt7/nK4vQAD9nOA6rDKYVkizcUs9Ov8cpvHU1iOi1A0SNoz+hQouzvAq3ewwMbvyYpq2NXdbvnL4RQKDMmg8F6gPw5o6yjjdC8qRv6r1sebzjUAA",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  }
+}

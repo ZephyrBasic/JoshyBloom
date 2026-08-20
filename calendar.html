@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en-AU" data-temp="bone">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar — Joshy Bloom</title>
+<meta name="description" content="Upcoming exhibitions, installations and performances by Joshy Bloom.">
+<meta property="og:title" content="Calendar — Joshy Bloom">
+<meta property="og:image" content="assets/img/opt/tower-of-dreams-1200.jpg">
+
+<link rel="preload" href="fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/styles.css">
+<meta name="theme-color" content="#f4f0e9">
+</head>
+
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Joshy&nbsp;Bloom</a>
+  <nav class="nav" aria-label="Primary">
+    <ul>
+      <li><a href="index.html">Work</a></li>
+      <li><a href="calendar.html" aria-current="page">Calendar</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main id="main">
+
+  <section class="section shell" data-temp-zone="bone" style="padding-block-start: clamp(8rem, 22vh, 14rem);">
+    <h1 class="display" style="font-size: var(--step-5);">Calendar</h1>
+    <p class="lead reveal" style="--delay: 100ms; max-width: 26ch; margin-top: 1.5rem;">
+      Exhibitions, installations and performances.
+    </p>
+  </section>
+
+  <section class="section shell" data-temp-zone="clay" aria-labelledby="upcoming-heading">
+    <div class="section-head">
+      <h2 id="upcoming-heading" class="display">Upcoming</h2>
+      <p class="eyebrow">Brisbane ~ Magandjin &amp; beyond</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         Events are authored here as plain HTML, so they render with or
+         without JavaScript and cannot fail to load. main.js only sorts them
+         and moves anything past into the archive below.
+
+         To add a date, copy one <li> block. Only three things matter:
+           <time datetime="YYYY-MM-DD">  a confirmed date
+           data-sort="YYYY-MM-DD"        ordering for a date that is not yet
+                                         confirmed — never displayed, and no
+                                         claim is made about it
+           data-until="YYYY-MM-DD"       last day of a run, so a multi-day
+                                         show does not archive on day one
+         Drop the <time> and use data-sort alone for anything still TBA.
+         Every <p> inside the middle <div> is optional.
+         ══════════════════════════════════════════════════════════════════ -->
+    <ul class="events" data-events="upcoming">
+
+      <li>
+        <article class="event">
+          <time class="event__date" datetime="2026-08-22">22 Aug 2026</time>
+          <div>
+            <h3 class="event__title">In Dog We Trust</h3>
+            <p class="event__role">Band</p>
+            <p class="event__lineup">with Extrafoxx, Henpeck and Ketamine Cowboys</p>
+            <p class="event__where">Small Change Espresso, 124&ndash;126 Currie St, Nambour</p>
+            <p class="event__details">Doors 6pm &middot; In Dog We Trust 9pm &middot; $15</p>
+            <a class="event__link" rel="noopener"
+               href="https://facebook.com/events/s/in-dog-we-trust-extrafoxx-henp/1360490772876171/">Event details</a>
+          </div>
+          <p class="event__kind">Performance</p>
+        </article>
+      </li>
+
+      <li>
+        <article class="event">
+          <time class="event__date" datetime="2026-08-28" data-until="2026-08-30">28&ndash;30 Aug 2026</time>
+          <div>
+            <h3 class="event__title">Our Space BNE</h3>
+            <p class="event__where">Common Ground</p>
+            <p class="event__details">Opening Friday 28 August</p>
+          </div>
+          <p class="event__kind">Exhibition</p>
+        </article>
+      </li>
+
+      <li>
+        <article class="event">
+          <time class="event__date" datetime="2026-08-29">29 Aug 2026</time>
+          <div>
+            <h3 class="event__title">Music Jam</h3>
+            <p class="event__role">Solo</p>
+            <p class="event__where">Ventspace, South Brisbane</p>
+            <p class="event__details">5pm</p>
+          </div>
+          <p class="event__kind">Performance</p>
+        </article>
+      </li>
+
+      <li>
+        <article class="event">
+          <time class="event__date" datetime="2026-09-05">5 Sept 2026</time>
+          <div>
+            <h3 class="event__title">Under My House</h3>
+            <p class="event__where">East Brisbane</p>
+            <p class="event__details">6pm &ndash; 10pm</p>
+          </div>
+          <p class="event__kind">Exhibition</p>
+        </article>
+      </li>
+
+      <!-- Date not yet announced. data-sort only orders it; nothing is claimed. -->
+      <li>
+        <article class="event">
+          <p class="event__date" data-sort="2026-09-30">Late Sept &mdash; TBA</p>
+          <div>
+            <h3 class="event__title">Exhibition</h3>
+            <p class="event__details">Details to be announced</p>
+          </div>
+          <p class="event__kind">Exhibition</p>
+        </article>
+      </li>
+
+      <li>
+        <article class="event">
+          <time class="event__date" datetime="2026-10-24">24 Oct 2026</time>
+          <div>
+            <h3 class="event__title">In Dog We Trust</h3>
+            <p class="event__role">Band</p>
+            <p class="event__where">Arts Factory, Northern NSW</p>
+          </div>
+          <p class="event__kind">Performance</p>
+        </article>
+      </li>
+
+      <li>
+        <article class="event">
+          <time class="event__date" datetime="2026-11-07">7 Nov 2026</time>
+          <div>
+            <h3 class="event__title">In Dog We Trust</h3>
+            <p class="event__role">Band</p>
+            <p class="event__where">Norman Park Bowls, Brisbane</p>
+          </div>
+          <p class="event__kind">Performance</p>
+        </article>
+      </li>
+
+    </ul>
+
+    <p class="empty-state" data-events-status role="status" hidden></p>
+  </section>
+
+  <section class="section shell" data-temp-zone="ash" data-archive hidden
+           aria-labelledby="past-heading">
+    <div class="section-head">
+      <h2 id="past-heading" class="display">Past</h2>
+      <p class="eyebrow">Archive</p>
+    </div>
+    <ul class="events" data-events="past"></ul>
+  </section>
+
+</main>
+
+<footer class="footer" data-temp-zone="ember">
+  <div class="shell footer__grid">
+    <p class="display" style="font-size: var(--step-4);">
+      <a href="contact.html" style="text-decoration: none;">
+        Get in touch <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </p>
+    <p class="footer__note">
+      Brisbane ~ Magandjin. &copy; <span data-year>2026</span>
+    </p>
+  </div>
+</footer>
+
+<script src="js/main.js" defer></script>
+</body>
+</html>
