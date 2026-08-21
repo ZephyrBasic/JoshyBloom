@@ -19,5 +19,7 @@ directory = "./public"
 # Serve public/404.html for unknown paths instead of a bare Cloudflare error.
 not_found_handling = "404-page"
 
-[observability]
-enabled = true
+# No [observability], [vars], logpush or tail workers here on purpose: Cloudflare
+# rejects all of them on a Worker that only has static assets. That restriction
+# is the proof there is no server-side code — there is nothing to observe. Logs
+# for the calendar controller live on that Worker instead, which does have code.
