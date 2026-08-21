@@ -100,8 +100,23 @@ original video — swapping it means replacing one `<picture>` with a `<video>`.
 - **No favicon, no sitemap.xml, no robots.txt.**
 - **Calendar and Contact are thinner than Home.** Correct, responsive and
   on-system, but each could take another compositional pass.
-- **Visual QA was done by measurement, not by eye.** The preview pane in this
-  session would not composite frames (`document.hidden` stayed true), so I
-  verified layout, grid placement, image selection, fonts, the temperature
-  sequence and the calendar rendering programmatically. **The site has not been
-  looked at on a real screen at any breakpoint.** Do that before deploying.
+- **Visual QA: done now**, on a real screen. All three pages at 1440px, and all
+  three at 390px in an iframe (Chrome won't size a window below ~500px). No
+  horizontal overflow anywhere; nav stays on one line at 390px; the calendar's
+  generated markup is indistinguishable from the hand-authored version it
+  replaced. Two things came out of it, both open:
+
+  - **The hero title is below the fold on a short viewport.** The hero is
+    `100svh` (787px of content) but a 13" laptop window gives ~610–750px, so you
+    land on the page and see an empty field plus the top of one image — the name
+    only appears once you scroll. It composes properly at 900px+ and on mobile.
+    Worth capping the display size against viewport height, or pulling the title
+    block up out of the bottom of the hero.
+  - **`mix-blend-mode: difference` on the masthead washes out over mid-tone
+    images.** Over the pale "Vessels" shot, WORK and CALENDAR drop to very low
+    contrast. It's fine over dark and over flat background. A small scrim behind
+    the nav, or swapping to a solid colour once past the hero, would fix it.
+
+  Not bugs, for the record: the fixed masthead appears displaced and sections
+  appear blank if you screenshot mid-smooth-scroll. Both are compositor
+  artefacts of the capture, not layout.
