@@ -132,10 +132,19 @@ Workers Builds deploys it on every push to `main`:
 Locally:
 
 ```bash
+npx wrangler dev --port 4321    # local preview
 npx wrangler deploy --dry-run   # validate without shipping
 npx wrangler deploy             # ship
-python -m http.server 4321 -d public
 ```
+
+Use `wrangler dev` rather than a plain static server: Cloudflare serves
+`/calendar`, not `/calendar.html`, and only wrangler reproduces that. A bare
+`python -m http.server -d public` will 404 on every nav link.
+
+**URLs are extensionless.** Cloudflare's asset handling 307s `/calendar.html`
+to `/calendar`, so internal links, `canonical`, `og:url` and the sitemap all
+name the extensionless form — a canonical that points at a redirect is worse
+than useless. Old `.html` links still resolve, they just cost a hop.
 
 `public/_headers` sets immutable caching on fonts and generated images.
 `public/404.html` is served for unknown paths via `not_found_handling`.
