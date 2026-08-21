@@ -1,0 +1,64 @@
+[
+  {
+    "id": "in-dog-we-trust-nambour",
+    "date": "2026-08-22",
+    "title": "In Dog We Trust",
+    "kind": "Performance",
+    "role": "Band",
+    "lineup": "with Extrafoxx, Henpeck and Ketamine Cowboys",
+    "where": "Small Change Espresso, 124–126 Currie St, Nambour",
+    "details": "Doors 6pm · In Dog We Trust 9pm · $15",
+    "link": "https://facebook.com/events/s/in-dog-we-trust-extrafoxx-henp/1360490772876171/"
+  },
+  {
+    "id": "our-space-bne",
+    "date": "2026-08-28",
+    "until": "2026-08-30",
+    "display": "28–30 Aug 2026",
+    "title": "Our Space BNE",
+    "kind": "Exhibition",
+    "where": "Common Ground",
+    "details": "Opening Friday 28 August"
+  },
+  {
+    "id": "music-jam-ventspace",
+    "date": "2026-08-29",
+    "title": "Music Jam",
+    "kind": "Performance",
+    "role": "Solo",
+    "where": "Ventspace, South Brisbane",
+    "details": "5pm"
+  },
+  {
+    "id": "under-my-house",
+    "date": "2026-09-05",
+    "title": "Under My House",
+    "kind": "Exhibition",
+    "where": "East Brisbane",
+    "details": "6pm – 10pm"
+  },
+  {
+    "id": "late-sept-exhibition",
+    "sort": "2026-09-30",
+    "display": "Late Sept — TBA",
+    "title": "Exhibition",
+    "kind": "Exhibition",
+    "details": "Details to be announced"
+  },
+  {
+    "id": "in-dog-we-trust-arts-factory",
+    "date": "2026-10-24",
+    "title": "In Dog We Trust",
+    "kind": "Performance",
+    "role": "Band",
+    "where": "Arts Factory, Northern NSW"
+  },
+  {
+    "id": "in-dog-we-trust-norman-park",
+    "date": "2026-11-07",
+    "title": "In Dog We Trust",
+    "kind": "Performance",
+    "role": "Band",
+    "where": "Norman Park Bowls, Brisbane"
+  }
+]

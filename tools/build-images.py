@@ -4,8 +4,8 @@ Run: python tools/build-images.py    Output: assets/img/opt/ + assets/img/manife
 import base64, glob, io, json, os, re
 from PIL import Image, ImageOps, ImageFilter
 
-SRC = "assets/img"
-OUT = os.path.join(SRC, "opt")
+SRC = "assets/img"                 # originals — never published
+OUT = "public/assets/img/opt"      # derivatives — inside the Pages output dir
 WIDTHS = [480, 800, 1200, 1800, 2400]
 
 SLUGS = {

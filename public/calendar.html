@@ -43,23 +43,21 @@
       <p class="eyebrow">Brisbane ~ Magandjin &amp; beyond</p>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════════
-         Events are authored here as plain HTML, so they render with or
-         without JavaScript and cannot fail to load. main.js only sorts them
-         and moves anything past into the archive below.
+    <!-- ═════════════════════════════════════════════════════════════════
+         GENERATED — do not edit the list below by hand. It is rewritten from
+         data/events.json, either locally with
 
-         To add a date, copy one <li> block. Only three things matter:
-           <time datetime="YYYY-MM-DD">  a confirmed date
-           data-sort="YYYY-MM-DD"        ordering for a date that is not yet
-                                         confirmed — never displayed, and no
-                                         claim is made about it
-           data-until="YYYY-MM-DD"       last day of a run, so a multi-day
-                                         show does not archive on day one
-         Drop the <time> and use data-sort alone for anything still TBA.
-         Every <p> inside the middle <div> is optional.
-         ══════════════════════════════════════════════════════════════════ -->
+           node tools/build-calendar.mjs
+
+         or by the WhatsApp controller when Joshy adds a date from a phone.
+
+         The events are written into the page at commit time rather than
+         fetched at runtime, so the calendar still renders with JavaScript
+         disabled and cannot fail to load. main.js only reorders them and
+         retires the ones that have been and gone.
+         ═════════════════════════════════════════════════════════════════ -->
     <ul class="events" data-events="upcoming">
-
+      <!-- events:start -->
       <li>
         <article class="event">
           <time class="event__date" datetime="2026-08-22">22 Aug 2026</time>
@@ -67,8 +65,8 @@
             <h3 class="event__title">In Dog We Trust</h3>
             <p class="event__role">Band</p>
             <p class="event__lineup">with Extrafoxx, Henpeck and Ketamine Cowboys</p>
-            <p class="event__where">Small Change Espresso, 124&ndash;126 Currie St, Nambour</p>
-            <p class="event__details">Doors 6pm &middot; In Dog We Trust 9pm &middot; $15</p>
+            <p class="event__where">Small Change Espresso, 124–126 Currie St, Nambour</p>
+            <p class="event__details">Doors 6pm · In Dog We Trust 9pm · $15</p>
             <a class="event__link" rel="noopener"
                href="https://facebook.com/events/s/in-dog-we-trust-extrafoxx-henp/1360490772876171/">Event details</a>
           </div>
@@ -78,7 +76,7 @@
 
       <li>
         <article class="event">
-          <time class="event__date" datetime="2026-08-28" data-until="2026-08-30">28&ndash;30 Aug 2026</time>
+          <time class="event__date" datetime="2026-08-28" data-until="2026-08-30">28–30 Aug 2026</time>
           <div>
             <h3 class="event__title">Our Space BNE</h3>
             <p class="event__where">Common Ground</p>
@@ -107,16 +105,15 @@
           <div>
             <h3 class="event__title">Under My House</h3>
             <p class="event__where">East Brisbane</p>
-            <p class="event__details">6pm &ndash; 10pm</p>
+            <p class="event__details">6pm – 10pm</p>
           </div>
           <p class="event__kind">Exhibition</p>
         </article>
       </li>
 
-      <!-- Date not yet announced. data-sort only orders it; nothing is claimed. -->
       <li>
         <article class="event">
-          <p class="event__date" data-sort="2026-09-30">Late Sept &mdash; TBA</p>
+          <p class="event__date" data-sort="2026-09-30">Late Sept — TBA</p>
           <div>
             <h3 class="event__title">Exhibition</h3>
             <p class="event__details">Details to be announced</p>
@@ -148,7 +145,7 @@
           <p class="event__kind">Performance</p>
         </article>
       </li>
-
+      <!-- events:end -->
     </ul>
 
     <p class="empty-state" data-events-status role="status" hidden></p>

@@ -4,18 +4,28 @@ Static site. No framework, no build step required to deploy — the HTML/CSS/JS
 in this repo is what ships.
 
 ```
-index.html          Home — hero, statement, selected work, installation, sound
-calendar.html       Upcoming + past dates (events authored inline as HTML)
-contact.html        Links
-css/styles.css      Design system (tokens, temperatures, layout, motion)
-js/main.js          Temperature, reveals, parallax, event sorting. No deps.
-fonts/              Self-hosted Fraunces + Inter, latin subset, woff2
-assets/img/         Originals (not served)
-assets/img/opt/     Generated derivatives (served)
-assets/img/manifest.json  Dimensions + LQIP per image
-tools/build-images.py     Regenerates assets/img/opt/
-_headers            Cloudflare Pages cache + security headers
+public/             Everything Pages publishes — and nothing else
+  index.html        Home — hero, statement, selected work, installation, sound
+  calendar.html     Upcoming + past dates (generated from data/events.json)
+  contact.html      Links
+  css/styles.css    Design system (tokens, temperatures, layout, motion)
+  js/main.js        Temperature, reveals, parallax, event sorting. No deps.
+  fonts/            Self-hosted Fraunces + Inter, latin subset, woff2
+  assets/img/opt/   Generated derivatives
+  _headers          Cloudflare Pages cache + security headers
+
+data/events.json    Every date. The source of truth for the calendar.
+assets/img/         Originals. Never published.
+assets/img/manifest.json  Dimensions + LQIP per image. Build-time only.
+tools/build-images.py     assets/img/ -> public/assets/img/opt/
+tools/build-calendar.mjs  data/events.json -> public/calendar.html
+tools/render-events.mjs   Shared renderer, used by the build and the controller
+controller/         WhatsApp calendar controller. A separate Cloudflare Worker
+                    that writes to this repo. Not part of the site.
 ```
+
+Anything outside `public/` is source, and is never uploaded anywhere.
+
 
 ## The temperature system
 
@@ -32,29 +42,47 @@ To retemperature a section, change one attribute. To add a temperature, add one
 
 ## Adding an event
 
-Events are written directly in `calendar.html` as ordinary list items. They are
-**not** fetched from anywhere — that means they render with JavaScript disabled,
-work when the file is opened straight off disk over `file://`, and cannot fail
-to load. `main.js` only sorts them and retires the ones that have passed.
+Three ways, all ending in the same place:
 
-Copy an existing `<li>` block. Three attributes drive the behaviour:
+1. **WhatsApp.** Joshy messages the bot; it commits and Pages redeploys. See
+   `controller/README.md`.
+2. **Edit `data/events.json`,** then regenerate:
 
-| Attribute | Meaning |
+   ```bash
+   node tools/build-calendar.mjs
+   ```
+
+3. **Edit `calendar.html` directly** — but the next regeneration overwrites it.
+   Don't.
+
+The generated markup lives between `<!-- events:start -->` and
+`<!-- events:end -->`. Everything outside the sentinels is yours to edit freely.
+
+Events are written into the page at commit time, **not** fetched at runtime.
+That means the calendar renders with JavaScript disabled, works from `file://`,
+and cannot fail to load. `main.js` only reorders the list and retires dates that
+have passed.
+
+### Event fields
+
+| Field | |
 |---|---|
-| `<time datetime="YYYY-MM-DD">` | A confirmed date. Also what search engines read. |
-| `data-sort="YYYY-MM-DD"` | Ordering only, for a date not yet announced. Never displayed, and asserts nothing. Use on a `<p>` instead of a `<time>`. |
-| `data-until="YYYY-MM-DD"` | Last day of a run, so a multi-day show stays in Upcoming until it actually closes rather than archiving on opening day. |
+| `date` | `YYYY-MM-DD`. A confirmed date. Becomes `<time datetime>`, which is what search engines read. |
+| `sort` | `YYYY-MM-DD` for a date **not** yet announced. Orders the entry without asserting anything, and is never displayed. Use instead of `date`, not alongside it. |
+| `until` | Last day of a run, so a multi-day show stays in Upcoming until it actually closes rather than archiving on opening day. |
+| `display` | Overrides the date text, e.g. `28–30 Aug 2026` or `Late Sept — TBA`. The `datetime` stays a single machine-readable day. |
+| `title` | Required. |
+| `kind` | The tag on the right: `Performance`, `Exhibition`, … |
+| `role`, `lineup`, `where`, `details`, `link` | All optional. Omit any and the layout closes up. |
 
-The visible date text is whatever you type between the tags, so a run can read
-"28–30 Aug 2026" while `datetime` stays a single machine-readable day.
+Entries with no resolvable date sort to the end. When nothing is upcoming, the
+page shows a written empty state rather than a blank section, and the Past
+archive unhides itself only once it has something in it.
 
-Every `<p>` inside the middle `<div>` is optional — `event__role`,
-`event__lineup`, `event__where`, `event__details`, `event__link`. Omit any line
-you do not need and the layout closes up.
-
-Entries with no resolvable date sort to the end of Upcoming. When nothing is
-upcoming at all, the page shows a written empty state instead of a blank
-section, and the Past archive unhides itself only once it has something in it.
+```bash
+node tools/build-calendar.mjs --check   # CI: fails if calendar.html is stale
+node --test controller/test.mjs         # 27 tests, no network needed
+```
 
 ## Images
 
@@ -71,7 +99,7 @@ intrinsic `width`/`height` so there is no layout shift.
 
 Two things worth knowing:
 
-- `assets/img/opt/` is ~60 MB across all three formats. Only one file is ever
+- `public/assets/img/opt/` is ~63 MB across all three formats. Only one file is ever
   fetched per image per visitor, so this costs bandwidth nothing — but it does
   make the repo heavy. If that matters, drop the JPEG tier above 1200px in
   `build-images.py`; AVIF and WebP together cover ~97% of browsers.
@@ -92,10 +120,15 @@ rAF-coalesced.
 Cloudflare Pages, connected to the GitHub repo:
 
 - Build command: *(none)*
-- Build output directory: `/`
+- Build output directory: `public`
 
-There is no server-side anything. `_headers` sets immutable caching on fonts and
-generated images.
+There is no server-side anything, and nothing is fetched at runtime. `_headers`
+sets immutable caching on fonts and generated images.
+
+The WhatsApp controller is a **separate** Worker deploy that only writes to this
+repo. It is not part of the site and cannot affect it — see
+`controller/README.md`. Note that it does require Pages to build from GitHub
+rather than from manual uploads.
 
 ## Still needed
 
