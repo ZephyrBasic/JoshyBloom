@@ -12,6 +12,36 @@
       1179
     ]
   },
+  "protected-spirits": {
+    "slug": "protected-spirits",
+    "source": "Protected Spirits 2026 ceramic mask.jpg",
+    "width": 2880,
+    "height": 3600,
+    "ratio": 0.8,
+    "lqip": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAABwAwCdASoQABQAPu1iqU2ppaOiMAgBMB2JYwC+SCEJ4Pr5bAAA/uoD3aZ3FiB6PCult0y5sP0R+aJutf1gy6ljPhHtGVBUpnDH9gAA",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
+  "tower-of-dreams": {
+    "slug": "tower-of-dreams",
+    "source": "alchemic circle full 7 ceramics installation with a crowd.jpg",
+    "width": 3000,
+    "height": 2000,
+    "ratio": 1.5,
+    "lqip": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAAAQBACdASoUAA0APu1iqU2ppaQiMAgBMB2JQBYdg8EeP4O5Pt7/nK4vQAD9nOA6rDKYVkizcUs9Ov8cpvHU1iOi1A0SNoz+hQouzvAq3ewwMbvyYpq2NXdbvnL4RQKDMmg8F6gPw5o6yjjdC8qRv6r1sebzjUAA",
+    "widths": [
+      480,
+      800,
+      1200,
+      1800,
+      2400
+    ]
+  },
   "vessel-sunlight": {
     "slug": "vessel-sunlight",
     "source": "ceramic in sunlight.jpeg",
@@ -210,36 +240,6 @@
     "height": 4032,
     "ratio": 0.75,
     "lqip": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAACwAwCdASoPABQAPu1mq04ppaQiMAgBMB2JZQC/OCHfT7LhEk4XaAD+w0RW5jVrMq6zcbgj9pEX6MhBZ+pX2pulAZHslVl9+PW/LNuO+Km1n8AA",
-    "widths": [
-      480,
-      800,
-      1200,
-      1800,
-      2400
-    ]
-  },
-  "protected-spirits": {
-    "slug": "protected-spirits",
-    "source": "Protected Spirits 2026 ceramic mask.jpg",
-    "width": 2880,
-    "height": 3600,
-    "ratio": 0.8,
-    "lqip": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAABwAwCdASoQABQAPu1iqU2ppaOiMAgBMB2JYwC+SCEJ4Pr5bAAA/uoD3aZ3FiB6PCult0y5sP0R+aJutf1gy6ljPhHtGVBUpnDH9gAA",
-    "widths": [
-      480,
-      800,
-      1200,
-      1800,
-      2400
-    ]
-  },
-  "tower-of-dreams": {
-    "slug": "tower-of-dreams",
-    "source": "alchemic circle full 7 ceramics installation with a crowd.jpg",
-    "width": 3000,
-    "height": 2000,
-    "ratio": 1.5,
-    "lqip": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAAAQBACdASoUAA0APu1iqU2ppaQiMAgBMB2JQBYdg8EeP4O5Pt7/nK4vQAD9nOA6rDKYVkizcUs9Ov8cpvHU1iOi1A0SNoz+hQouzvAq3ewwMbvyYpq2NXdbvnL4RQKDMmg8F6gPw5o6yjjdC8qRv6r1sebzjUAA",
     "widths": [
       480,
       800,

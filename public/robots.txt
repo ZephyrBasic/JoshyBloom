@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://joshybloom.com/sitemap.xml

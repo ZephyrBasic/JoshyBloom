@@ -40,11 +40,43 @@ def lqip(im):
     t.save(buf, "WEBP", quality=40)
     return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
 
+
+# --- social cards -----------------------------------------------------------
+# Facebook, WhatsApp and iMessage crop og:image to roughly 1.91:1. None of the
+# source photographs are that shape, so left alone they get centre-cropped
+# badly — a portrait loses the head. These are cropped deliberately instead.
+# `focus` is the vertical centre of interest, 0 = top edge, 1 = bottom.
+OG_SIZE = (1200, 630)
+OG_CARDS = {
+    "og-home":     ("tower-of-dreams", 0.50),
+    "og-calendar": ("process-beach",   0.45),
+    "og-contact":  ("portrait-profile", 0.38),  # bias up: keep the face
+}
+
+def og_cards(sources):
+    for name, (slug, focus) in OG_CARDS.items():
+        src = sources.get(slug)
+        if not src:
+            print(f"  ! {name}: no source {slug}", flush=True)
+            continue
+        tw, th = OG_SIZE
+        w0, h0 = src.size
+        # Cover-fit, then crop the overflow around `focus`.
+        scale = max(tw / w0, th / h0)
+        rw, rh = round(w0 * scale), round(h0 * scale)
+        r = src.resize((rw, rh), Image.LANCZOS)
+        left = (rw - tw) // 2
+        top = max(0, min(rh - th, round(rh * focus - th / 2)))
+        card = r.crop((left, top, left + tw, top + th))
+        card.save(f"{OUT}/{name}.jpg", quality=82, optimize=True, progressive=True)
+        print(f"{name:<22} {slug} {w0}x{h0} -> {tw}x{th}", flush=True)
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     manifest = {}
     files = [f for f in sorted(glob.glob(os.path.join(SRC, "*")))
              if os.path.isfile(f) and f.lower().endswith((".jpg", ".jpeg", ".png"))]
+    sources = {}
     for f in files:
         stem = os.path.splitext(os.path.basename(f))[0]
         slug = slugify(stem)
@@ -61,7 +93,9 @@ def main():
             r.save(f"{OUT}/{slug}-{w}.webp", quality=76, method=5)
             r.save(f"{OUT}/{slug}-{w}.jpg", quality=80, optimize=True, progressive=True)
         manifest[slug] = entry
+        sources[slug] = im
         print(f"{slug:<22} {w0}x{h0} -> {widths}", flush=True)
+    og_cards(sources)
     with open(os.path.join(SRC, "manifest.json"), "w") as fh:
         json.dump(manifest, fh, indent=2)
     total = sum(os.path.getsize(p) for p in glob.glob(f"{OUT}/*"))
