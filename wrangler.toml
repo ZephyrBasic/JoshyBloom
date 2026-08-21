@@ -1,0 +1,23 @@
+# The site itself: a Worker that serves static assets and nothing else.
+# There is no `main`, so no server-side code runs — Cloudflare serves the files
+# in public/ straight from its edge. This is what "static" means here.
+#
+# Deployed by Workers Builds on every push to main:
+#   Path            /
+#   Build command   (none)
+#   Deploy command  npx wrangler deploy
+#
+# The calendar controller is a SEPARATE Worker with its own config in
+# controller/wrangler.toml. It is never deployed by this file.
+
+name = "old-snowflake-3d91"
+compatibility_date = "2026-08-01"
+
+[assets]
+directory = "./public"
+
+# Serve public/404.html for unknown paths instead of a bare Cloudflare error.
+not_found_handling = "404-page"
+
+[observability]
+enabled = true

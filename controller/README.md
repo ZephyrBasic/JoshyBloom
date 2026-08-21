@@ -4,7 +4,7 @@ Lets Joshy add, edit and remove calendar dates by messaging WhatsApp.
 
 **The site stays static.** This Worker never serves a page and never talks to a
 visitor. It edits `data/events.json` and `public/calendar.html` in the repo and pushes
-one commit; Cloudflare Pages redeploys from that commit. If this Worker is down,
+one commit; The site Worker rebuilds from that commit. If this Worker is down,
 misconfigured or deleted, joshybloom.com is completely unaffected — it is still
 the same folder of HTML, CSS, JS and images it was before.
 
@@ -17,7 +17,7 @@ Cloudflare Worker  ──►  reply to Joshy
    ↓  one commit (GitHub Git Data API)
 GitHub repo
    ↓  push
-Cloudflare Pages  ──►  static site
+Workers Builds     ──►  static site
 ```
 
 ## Why the events are still inline HTML
@@ -69,14 +69,16 @@ and `remove` undoes anything, as does `git revert`.
 
 ## Setup
 
-### 1. Point Pages at the repo
+### 1. Point the site Worker at the repo
 
-This is the one change to your workflow. Pages must build from GitHub rather
-than from manual uploads, or commits will never reach the site.
+This is the one change to the workflow. The site Worker must build from GitHub
+rather than from manual uploads, or the controller's commits never reach the
+site.
 
-Cloudflare dashboard → Workers & Pages → your project → Settings → **Connect to
-Git** → `ZephyrBasic/JoshyBloom`, branch `main`. Build command: *none*. Output
-directory: `public`.
+Cloudflare dashboard → Workers & Pages → the **site** Worker → Settings → Build
+→ **Connect** to `ZephyrBasic/JoshyBloom`, branch `main`, with Path `/`, no
+build command, and deploy command `npx wrangler deploy`. The root
+`wrangler.toml` does the rest.
 
 ### 2. Meta app
 

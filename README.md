@@ -117,18 +117,32 @@ rAF-coalesced.
 
 ## Deploy
 
-Cloudflare Pages, connected to the GitHub repo:
+The site is a **Worker with static assets** — `wrangler.toml` at the repo root
+declares `public/` as the asset directory and defines no `main`, so no
+server-side code runs. Cloudflare serves the files from its edge.
 
-- Build command: *(none)*
-- Build output directory: `public`
+Workers Builds deploys it on every push to `main`:
 
-There is no server-side anything, and nothing is fetched at runtime. `_headers`
-sets immutable caching on fonts and generated images.
+| | |
+|---|---|
+| Path | `/` |
+| Build command | *(none)* |
+| Deploy command | `npx wrangler deploy` |
 
-The WhatsApp controller is a **separate** Worker deploy that only writes to this
-repo. It is not part of the site and cannot affect it — see
-`controller/README.md`. Note that it does require Pages to build from GitHub
-rather than from manual uploads.
+Locally:
+
+```bash
+npx wrangler deploy --dry-run   # validate without shipping
+npx wrangler deploy             # ship
+python -m http.server 4321 -d public
+```
+
+`public/_headers` sets immutable caching on fonts and generated images.
+`public/404.html` is served for unknown paths via `not_found_handling`.
+
+The calendar controller is a **second, separate** Worker built from
+`controller/` in this same repo. It only writes to the repo and cannot affect
+the site — see `controller/README.md`.
 
 ## Still needed
 
