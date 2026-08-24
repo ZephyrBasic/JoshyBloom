@@ -60,11 +60,5 @@
     "kind": "Performance",
     "role": "Band",
     "where": "Norman Park Bowls, Brisbane"
-  },
-  {
-    "title": "deploy test",
-    "date": "2027-01-01",
-    "kind": "Exhibition",
-    "id": "deploy-test-2027-01-01"
   }
 ]
