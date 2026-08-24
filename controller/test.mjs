@@ -10,7 +10,7 @@ import { readFile } from "node:fs/promises";
 
 import { parseCommand, parseDate, helpText } from "./parse.mjs";
 import { patchCalendar, formatDate, sortEvents } from "../tools/render-events.mjs";
-import { apply, listText } from "./worker.js";
+import { apply, listText, normalise } from "./worker.js";
 import worker from "./worker.js";
 
 const TODAY = "2026-08-21";
@@ -115,7 +115,7 @@ test("help and list are recognised however they're typed", () => {
 
 test("list numbers events in the order the site shows them", () => {
   const text = listText(seed, TODAY);
-  assert.match(text, /^\*1\.\* 22 Aug 2026 — In Dog We Trust/);
+  assert.match(text, /^1\. 22 Aug 2026 — In Dog We Trust/);
   assert.ok(text.indexOf("Our Space BNE") < text.indexOf("Music Jam"));
   assert.ok(text.indexOf("Late Sept") < text.indexOf("24 Oct 2026"));
 });
@@ -198,24 +198,15 @@ test("a page without sentinels is refused rather than mangled", () => {
 /* --- the worker, end to end --------------------------------------------- */
 
 const ENV = {
-  META_APP_SECRET: "app-secret",
-  META_VERIFY_TOKEN: "verify-me",
-  META_TOKEN: "graph-token",
-  META_PHONE_ID: "PHONE",
+  TELEGRAM_TOKEN: "bot-token",
+  TELEGRAM_SECRET: "webhook-secret",
   GITHUB_TOKEN: "gh-token",
   GITHUB_REPO: "ZephyrBasic/JoshyBloom",
   GITHUB_BRANCH: "main",
-  ALLOWED_NUMBERS: "61400000000",
+  ALLOWED_USERS: "8675309",
 };
 
-async function sign(body) {
-  const key = await crypto.subtle.importKey(
-    "raw", new TextEncoder().encode(ENV.META_APP_SECRET),
-    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-  );
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
-  return "sha256=" + [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+const HEADER = "x-telegram-bot-api-secret-token";
 
 /** Stands in for GitHub and the Graph API, and records what was sent. */
 function fakeNetwork({ failRefOnce = false } = {}) {
@@ -226,9 +217,9 @@ function fakeNetwork({ failRefOnce = false } = {}) {
     const u = String(url);
     const json = (o) => new Response(JSON.stringify(o), { headers: { "content-type": "application/json" } });
 
-    if (u.startsWith("https://graph.facebook.com/")) {
-      sent.replies.push(JSON.parse(init.body).text.body);
-      return json({ messages: [{ id: "wamid.reply" }] });
+    if (u.startsWith("https://api.telegram.org/")) {
+      sent.replies.push(JSON.parse(init.body).text);
+      return json({ ok: true, result: { message_id: 1 } });
     }
     if (u.includes("/git/ref/heads/")) return json({ object: { sha: "HEADSHA" } });
     if (u.includes("/contents/data/events.json")) return json({ content: b64(JSON.stringify(seed)) });
@@ -254,17 +245,19 @@ function fakeNetwork({ failRefOnce = false } = {}) {
   return sent;
 }
 
-async function deliver(text, { from = "61400000000", signature, ...opts } = {}) {
+const update = (text, from = 8675309) => JSON.stringify({
+  update_id: 1,
+  message: { message_id: 2, from: { id: from }, chat: { id: from }, text },
+});
+
+async function deliver(text, { from = 8675309, secret = ENV.TELEGRAM_SECRET, ...opts } = {}) {
   const sent = fakeNetwork(opts);
-  const body = JSON.stringify({
-    entry: [{ changes: [{ value: { messages: [{ from, type: "text", text: { body: text } }] } }] }],
-  });
   const pending = [];
   const res = await worker.fetch(
     new Request("https://ctl.example/", {
       method: "POST",
-      body,
-      headers: { "x-hub-signature-256": signature ?? (await sign(body)) },
+      body: update(text, from),
+      headers: secret === null ? {} : { [HEADER]: secret },
     }),
     ENV,
     { waitUntil: (p) => pending.push(p) }
@@ -294,21 +287,26 @@ test("help never reads or writes the repo", async () => {
   assert.equal(sent.replies[0], helpText());
 });
 
-test("a bad signature is rejected before anything is parsed", async () => {
-  const { res, sent } = await deliver("remove 1", { signature: "sha256=" + "0".repeat(64) });
+test("a wrong webhook secret is rejected before anything is parsed", async () => {
+  const { res, sent } = await deliver("remove 1", { secret: "not-the-secret" });
   assert.equal(res.status, 401);
   assert.equal(sent.commits.length, 0);
   assert.equal(sent.replies.length, 0);
 });
 
-test("a signature header that isn't one is rejected", async () => {
-  const { res } = await deliver("remove 1", { signature: "garbage" });
+test("a missing webhook secret is rejected", async () => {
+  const { res } = await deliver("remove 1", { secret: null });
   assert.equal(res.status, 401);
 });
 
-test("a stranger with a valid Meta signature changes nothing", async () => {
-  const { res, sent } = await deliver("remove 1", { from: "61499999999" });
-  assert.equal(res.status, 200, "still acked, so Meta stops retrying");
+test("a secret of the right length but wrong bytes is rejected", async () => {
+  const { res } = await deliver("remove 1", { secret: "x".repeat(ENV.TELEGRAM_SECRET.length) });
+  assert.equal(res.status, 401);
+});
+
+test("a stranger with the right secret changes nothing", async () => {
+  const { res, sent } = await deliver("remove 1", { from: 99999 });
+  assert.equal(res.status, 200, "still acked, so Telegram stops retrying");
   assert.equal(sent.commits.length, 0);
   assert.equal(sent.replies.length, 0, "and gets no reply either");
 });
@@ -319,18 +317,34 @@ test("a losing race is retried on top of the other commit", async () => {
   assert.match(sent.replies[0], /Added/);
 });
 
-test("Meta's subscription handshake", async () => {
-  const ok = await worker.fetch(
-    new Request("https://ctl.example/?hub.mode=subscribe&hub.verify_token=verify-me&hub.challenge=42"),
-    ENV, {}
-  );
-  assert.equal(await ok.text(), "42");
+test("a GET is refused: there is no handshake to answer", async () => {
+  const res = await worker.fetch(new Request("https://ctl.example/"), ENV, {});
+  assert.equal(res.status, 405);
+});
 
-  const bad = await worker.fetch(
-    new Request("https://ctl.example/?hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=42"),
-    ENV, {}
+test("Telegram slash commands reach the same parser", () => {
+  assert.equal(normalise("/help"), "help");
+  assert.equal(normalise("/help@JoshyBloomBot"), "help");
+  assert.equal(normalise("/start"), "help", "first run lands on help");
+  assert.equal(normalise("/list"), "list");
+  assert.equal(normalise("add\ntitle: Plain"), "add\ntitle: Plain", "untouched without a slash");
+});
+
+test("an edited message is ignored", async () => {
+  const sent = fakeNetwork();
+  const res = await worker.fetch(
+    new Request("https://ctl.example/", {
+      method: "POST",
+      headers: { [HEADER]: ENV.TELEGRAM_SECRET },
+      body: JSON.stringify({
+        update_id: 9,
+        edited_message: { from: { id: 8675309 }, chat: { id: 8675309 }, text: "remove 1" },
+      }),
+    }),
+    ENV, { waitUntil: () => {} }
   );
-  assert.equal(bad.status, 403);
+  assert.equal(res.status, 200);
+  assert.equal(sent.commits.length, 0);
 });
 
 test("a GitHub failure tells Joshy nothing changed", async () => {
@@ -341,12 +355,13 @@ test("a GitHub failure tells Joshy nothing changed", async () => {
       ? new Response("boom", { status: 500 })
       : inner(url, init);
 
-  const body = JSON.stringify({
-    entry: [{ changes: [{ value: { messages: [{ from: "61400000000", type: "text", text: { body: "add\ndate: 3 Sept 2026\ntitle: Doomed" } }] } }] }],
-  });
   const pending = [];
   await worker.fetch(
-    new Request("https://ctl.example/", { method: "POST", body, headers: { "x-hub-signature-256": await sign(body) } }),
+    new Request("https://ctl.example/", {
+      method: "POST",
+      body: update("add\ndate: 3 Sept 2026\ntitle: Doomed"),
+      headers: { [HEADER]: ENV.TELEGRAM_SECRET },
+    }),
     ENV, { waitUntil: (p) => pending.push(p) }
   );
   await Promise.all(pending);

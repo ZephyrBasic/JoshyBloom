@@ -2,18 +2,20 @@ name = "joshybloom-calendar"
 main = "worker.js"
 compatibility_date = "2026-08-01"
 
-# Not secrets — safe in the repo. The four secrets are set with
+# Not secrets — safe in the repo. The three secrets are set with
 # `wrangler secret put NAME` and never appear in this file. See README.md.
 [vars]
 GITHUB_REPO = "ZephyrBasic/JoshyBloom"
 GITHUB_BRANCH = "main"
 
-# From the WhatsApp > API Setup page in the Meta app dashboard.
-META_PHONE_ID = "REPLACE_WITH_PHONE_NUMBER_ID"
-
-# Who is allowed to change the calendar. E.164 without the +, comma separated.
-# A valid Meta signature only proves Meta sent the message, not who wrote it.
-ALLOWED_NUMBERS = "REPLACE_WITH_JOSHYS_NUMBER"
+# Who is allowed to change the calendar: numeric Telegram user IDs, comma
+# separated. Not phone numbers and not usernames — a bot is never told the
+# sender's phone number, and a username can be changed or given away, while
+# the numeric id is fixed for the life of the account.
+#
+# To find an id: message @userinfobot, or message this bot and read the
+# "rejected sender" line out of `wrangler tail`.
+ALLOWED_USERS = "REPLACE_WITH_ZEPHYR_ID,REPLACE_WITH_JOSHY_ID"
 
 [observability]
 enabled = true

@@ -1,18 +1,18 @@
 # Calendar controller
 
-Lets Joshy add, edit and remove calendar dates by messaging WhatsApp.
+Lets Joshy add, edit and remove calendar dates by messaging a Telegram bot.
 
 **The site stays static.** This Worker never serves a page and never talks to a
 visitor. It edits `data/events.json` and `public/calendar.html` in the repo and pushes
-one commit; The site Worker rebuilds from that commit. If this Worker is down,
+one commit; the site Worker rebuilds from that commit. If this Worker is down,
 misconfigured or deleted, joshybloom.com is completely unaffected — it is still
 the same folder of HTML, CSS, JS and images it was before.
 
 ```
 Joshy's phone
-   ↓  WhatsApp
-Meta Cloud API
-   ↓  signed POST
+   ↓  Telegram
+Telegram Bot API
+   ↓  POST with a shared secret header
 Cloudflare Worker  ──►  reply to Joshy
    ↓  one commit (GitHub Git Data API)
 GitHub repo
@@ -37,7 +37,7 @@ and committed alongside it, so the two can never drift.
 worker.js      Entry point: verify, authorise, dispatch, reply
 parse.mjs      Message → event object. Deterministic, no model call
 github.mjs     Read two files, write them back in one commit
-test.mjs       End to end with GitHub and Meta faked out
+test.mjs       End to end with GitHub and Telegram faked out
 wrangler.toml  Non-secret config
 ```
 
@@ -59,6 +59,8 @@ link: facebook.com/events/...
 ```
 
 Only `date` and `title` are required. Also `list`, `edit 3`, `remove 3`, `help`.
+Telegram's slash forms (`/help`, `/list`, and the first-run `/start`) reach the
+same parser.
 
 Dates: `22 Aug` · `22 Aug 2026` · `22/8` · `2026-08-22` · `tba`. Day before
 month. A year-less date resolves to its **next** occurrence, so "22 Aug" typed
@@ -80,39 +82,52 @@ Cloudflare dashboard → Workers & Pages → the **site** Worker → Settings �
 build command, and deploy command `npx wrangler deploy`. The root
 `wrangler.toml` does the rest.
 
-### 2. Meta app
+### 2. Create the bot
 
-Needs a Meta Business account and a phone number that is **not already
-registered to a personal WhatsApp account**. This is the fiddliest part; budget
-half an hour.
+In Telegram, message [@BotFather](https://t.me/BotFather):
 
-1. [developers.facebook.com](https://developers.facebook.com/apps) → **Create
-   app** → *Business* → add the **WhatsApp** product.
-2. WhatsApp → **API Setup**. Note the **Phone number ID** and add Joshy's own
-   number under *To* as a test recipient.
-3. App settings → Basic → reveal the **App secret**.
+1. `/newbot` → give it a display name, then a username ending in `bot`
+   (e.g. `JoshyBloomCalendarBot`). BotFather replies with the **bot token**.
+2. Optional but nice: `/setdescription` and `/setcommands`, pasting
 
-The test access token on that page expires in 24 hours. For a permanent one:
-Business Settings → **System users** → add one with admin access to the app →
-*Generate new token* → scopes `whatsapp_business_messaging` and
-`whatsapp_business_management` → set expiry to **Never**.
+   ```
+   help - what I understand
+   list - show the calendar
+   ```
 
-### 3. Configure and deploy
+No business account, no phone number, no verification, no approval wait. The
+**bot** needs a username; you and Joshy do not.
 
-Put the two non-secret values in `wrangler.toml`:
+> The bot cannot message you first — Telegram only lets it reply to someone who
+> has messaged it. Send `/start` once from each phone that will use it.
+
+### 3. Find the user IDs
+
+The allowlist uses **numeric Telegram user IDs**, not phone numbers (a bot is
+never told the sender's number) and not usernames (which can be changed or
+given away).
+
+Message [@userinfobot](https://t.me/userinfobot) from each phone and it replies
+with the id. Or skip it: deploy first, message the bot, and read the
+`rejected sender <id>` line out of `npx wrangler tail`.
+
+Put them in `wrangler.toml`:
 
 ```toml
-META_PHONE_ID   = "…"          # from API Setup
-ALLOWED_NUMBERS = "61412345678" # Joshy's number, E.164, no +
+ALLOWED_USERS = "111111111,222222222"   # Zephyr, Joshy
 ```
 
-Then from `controller/`:
+### 4. Configure and deploy
+
+Invent a webhook secret — any random string, e.g. `openssl rand -hex 32`. It is
+shared between `setWebhook` and the Worker; it is not the bot token.
+
+From `controller/`:
 
 ```bash
-npx wrangler secret put META_APP_SECRET    # app secret from step 2
-npx wrangler secret put META_TOKEN         # system user token from step 2
-npx wrangler secret put META_VERIFY_TOKEN  # any random string you invent
-npx wrangler secret put GITHUB_TOKEN       # see below
+npx wrangler secret put TELEGRAM_TOKEN    # from BotFather
+npx wrangler secret put TELEGRAM_SECRET   # the random string you just made
+npx wrangler secret put GITHUB_TOKEN      # see below
 npx wrangler deploy
 ```
 
@@ -125,25 +140,36 @@ Secrets are stored encrypted by Cloudflare. They are never written to
 else. That is the entire blast radius if it ever leaks — someone could edit this
 one repo, and every change is in the git history.
 
-### 4. Subscribe the webhook
+### 5. Register the webhook
 
 Deploy prints a URL like `https://joshybloom-calendar.<subdomain>.workers.dev`.
+Telegram has no handshake to answer; you just tell it where to post, once:
 
-Meta app dashboard → WhatsApp → Configuration → **Edit** webhook:
+```bash
+curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "url": "https://joshybloom-calendar.<subdomain>.workers.dev",
+        "secret_token": "<TELEGRAM_SECRET>",
+        "allowed_updates": ["message"]
+      }'
+```
 
-- Callback URL: the Worker URL
-- Verify token: whatever you set as `META_VERIFY_TOKEN`
+Check it took:
 
-Click **Verify and save** — the Worker answers Meta's handshake. Then
-**Manage** → subscribe to the **`messages`** field. This is easy to miss, and
-without it nothing is ever delivered.
+```bash
+curl "https://api.telegram.org/bot<BOT_TOKEN>/getWebhookInfo"
+```
 
-### 5. Test
+`pending_update_count` should be 0 and `last_error_message` absent. A
+`401 bad token` there means `secret_token` and `TELEGRAM_SECRET` disagree.
 
-Message the WhatsApp number from Joshy's phone:
+### 6. Test
+
+Message the bot from your own phone first, since you are on the allowlist too:
 
 ```
-help
+/start
 list
 add
 date: 1 Jan 2027
@@ -160,13 +186,18 @@ npx wrangler tail        # live logs if something is quiet
 
 Two independent gates, both of which must pass:
 
-1. **`X-Hub-Signature-256`** — HMAC-SHA256 of the raw body under the app secret,
-   compared in constant time, checked before the JSON is parsed. Nothing but
-   Meta can produce a valid one.
-2. **Number allowlist** — a valid signature only proves *Meta* sent the message,
-   not who wrote it. Anyone who finds the number can message the bot, so the
-   sender is checked against `ALLOWED_NUMBERS`. Anyone else is logged, ignored,
-   and gets no reply at all.
+1. **`X-Telegram-Bot-Api-Secret-Token`** — the string given to `setWebhook`,
+   echoed back on every delivery and compared in constant time before the JSON
+   is parsed. Nothing that doesn't know it can reach the parser.
+2. **User allowlist** — the secret only proves *Telegram* sent the message, not
+   who wrote it. Anyone who finds the bot can message it, so `from.id` is
+   checked against `ALLOWED_USERS`. Anyone else is logged, ignored, and gets no
+   reply at all.
+
+This differs from the Meta version in kind: Telegram signs nothing, so gate 1 is
+a shared secret rather than an HMAC over the body. Gate 2 was always the one
+that decided *who* may edit, and it is unchanged — so in practice the security
+is equivalent. Keep the bot token out of logs: it sits in the request path.
 
 Titles and every other field are HTML-escaped on the way into the page, so a
 message cannot inject markup. There is a test for it.
@@ -178,10 +209,8 @@ retries once on top of the newer commit).
 ## Cost
 
 Cloudflare Workers' free tier is 100,000 requests a day; this will use a handful.
-Meta's Cloud API does not charge for service conversations — Joshy messages
-first, and replies land inside the 24-hour window. Meta changes pricing
-periodically, so it's worth a glance at the dashboard occasionally, but there is
-no template or marketing messaging here.
+The Telegram Bot API is free, with no per-message fee and no conversation
+window to stay inside.
 
 ## Known limits
 
@@ -191,6 +220,9 @@ no template or marketing messaging here.
 - **Past events are retired in the browser, not at build time**, exactly as
   before — `main.js` moves them to the archive on load. Nothing needs to run on
   a schedule.
-- **Meta may retry a delivery.** An identical `add` (same title and date) is
-  absorbed rather than duplicated, but an `edit` sent twice applies twice — it
-  is idempotent in effect, since the second run sets the same fields.
+- **Telegram may retry a delivery** it doesn't get a prompt `200` for. An
+  identical `add` (same title and date) is absorbed rather than duplicated, but
+  an `edit` sent twice applies twice — it is idempotent in effect, since the
+  second run sets the same fields.
+- **Edited messages are ignored.** Correcting a typo in a sent message does
+  nothing; send a new one.

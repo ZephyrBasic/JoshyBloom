@@ -1,58 +1,69 @@
-/* WhatsApp → calendar controller.
+/* Telegram → calendar controller.
    Cloudflare Worker. Deployed separately from the site; the site itself stays
    a folder of static files with no server-side anything.
 
-   Meta posts an inbound message here. If the signature checks out and the
-   sender is on the allowlist, the message is parsed into an event, written
+   Telegram posts an inbound message here. If the webhook secret checks out and
+   the sender is on the allowlist, the message is parsed into an event, written
    into data/events.json, rendered into calendar.html, and both are committed
-   in one commit. Pages redeploys. Joshy gets a reply saying what changed.
+   in one commit. The site redeploys. Joshy gets a reply saying what changed.
 
-   Secrets (wrangler secret put …): META_APP_SECRET, META_TOKEN,
-   META_VERIFY_TOKEN, GITHUB_TOKEN. See README.md.
+   Secrets (wrangler secret put …): TELEGRAM_TOKEN, TELEGRAM_SECRET,
+   GITHUB_TOKEN. See README.md.
 */
 
 import { parseCommand, helpText, todayInBrisbane } from "./parse.mjs";
 import { patchCalendar, sortEvents, formatDate, endDate } from "../tools/render-events.mjs";
 import { repoClient } from "./github.mjs";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+const API = "https://api.telegram.org";
 
-/* --- Meta plumbing ------------------------------------------------------ */
+/* --- Telegram plumbing -------------------------------------------------- */
 
-/** Meta signs the raw body with the app secret. Verified before the JSON is
-    even parsed, so an unsigned payload never reaches the parser. */
-async function signatureValid(raw, header, secret) {
-  if (!header?.startsWith("sha256=") || !secret) return false;
-  const key = await crypto.subtle.importKey(
-    "raw", new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-  );
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw));
-  const expected = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  const given = header.slice(7);
+/**
+ * Telegram echoes back the secret given to setWebhook, in a header. Unlike
+ * Meta there is no signature over the body, so this token and the allowlist
+ * are the entire gate — which is why the allowlist is checked separately
+ * below rather than being treated as a formality.
+ */
+export function tokenValid(given, expected) {
+  if (!given || !expected || given.length !== expected.length) return false;
 
   // Constant-time: compare every byte regardless of where they diverge.
-  if (given.length !== expected.length) return false;
   let diff = 0;
   for (let i = 0; i < expected.length; i++) diff |= given.charCodeAt(i) ^ expected.charCodeAt(i);
   return diff === 0;
 }
 
-async function reply(env, to, body) {
-  const res = await fetch(`${GRAPH}/${env.META_PHONE_ID}/messages`, {
+/**
+ * Replies are plain text on purpose. Telegram's markdown modes require
+ * escaping that varies by mode, and a stray character in a venue name would
+ * either break the formatting or fail the send outright. The same strings go
+ * into commit messages, where entities would just be noise.
+ */
+async function reply(env, chatId, body) {
+  const res = await fetch(`${API}/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.META_TOKEN}`,
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to,
-      type: "text",
-      text: { preview_url: false, body: body.slice(0, 4000) },
+      chat_id: chatId,
+      text: body.slice(0, 4000),
+      link_preview_options: { is_disabled: true },
     }),
   });
+  // Never log the response URL: the bot token is in the path.
   if (!res.ok) console.error("reply failed", res.status, (await res.text()).slice(0, 300));
+}
+
+/**
+ * Telegram clients send commands as /list, /help, and a first-run /start,
+ * optionally suffixed with the bot's name. Strip that so the parser sees the
+ * same words it would get from any other source.
+ */
+export function normalise(text) {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("/")) return trimmed;
+  const stripped = trimmed.slice(1).replace(/^([A-Za-z_]+)@\w+/, "$1");
+  return /^start\b/i.test(stripped) ? "help" : stripped;
 }
 
 /* --- presentation ------------------------------------------------------- */
@@ -69,7 +80,7 @@ export function listText(events, today) {
     .map((e, i) => {
       const end = endDate(e);
       const past = end && end < today ? "  (past)" : "";
-      return `*${i + 1}.* ${describe(e)}${past}`;
+      return `${i + 1}. ${describe(e)}${past}`;
     })
     .join("\n\n");
 }
@@ -92,8 +103,8 @@ export function apply(command, events, today) {
       (e) => e.title?.toLowerCase() === command.event.title.toLowerCase() &&
              (e.date || e.sort) === (command.event.date || command.event.sort)
     );
-    // Meta retries webhooks it thinks failed; without this, one message could
-    // land twice.
+    // Telegram retries any delivery it does not get a prompt 200 for; without
+    // this, one message could land twice.
     if (clash) return { text: `That one's already up:\n\n${describe(clash)}` };
 
     next.push(command.event);
@@ -121,13 +132,13 @@ export function apply(command, events, today) {
   return { text, events: next };
 }
 
-async function handleMessage(env, from, body) {
+async function handleMessage(env, chatId, body) {
   const today = todayInBrisbane();
-  const command = parseCommand(body, today);
+  const command = parseCommand(normalise(body), today);
 
   // Read-only commands never touch the repo.
   if (command.cmd === "help" || command.cmd === "error") {
-    return reply(env, from, apply(command, [], today).text);
+    return reply(env, chatId, apply(command, [], today).text);
   }
 
   const repo = repoClient(env);
@@ -138,7 +149,7 @@ async function handleMessage(env, from, body) {
     const { headSha, events, calendar } = await repo.read();
     const result = apply(command, events, today);
 
-    if (!result.events) return reply(env, from, result.text);
+    if (!result.events) return reply(env, chatId, result.text);
 
     const json = `${JSON.stringify(result.events, null, 2)}\n`;
     try {
@@ -148,9 +159,9 @@ async function handleMessage(env, from, body) {
           "data/events.json": json,
           "public/calendar.html": patchCalendar(calendar, result.events),
         },
-        message: `Calendar: ${command.cmd} via WhatsApp\n\n${result.text.split("\n")[2] || ""}`.trim(),
+        message: `Calendar: ${command.cmd} via Telegram\n\n${result.text.split("\n")[2] || ""}`.trim(),
       });
-      return reply(env, from, result.text);
+      return reply(env, chatId, result.text);
     } catch (err) {
       if (attempt === 1) throw err;
       console.warn("commit raced, retrying", err.message);
@@ -162,50 +173,37 @@ async function handleMessage(env, from, body) {
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-
-    // Meta's one-time subscription handshake.
-    if (request.method === "GET") {
-      const p = url.searchParams;
-      if (p.get("hub.mode") === "subscribe" &&
-          p.get("hub.verify_token") === env.META_VERIFY_TOKEN) {
-        return new Response(p.get("hub.challenge"), { status: 200 });
-      }
-      return new Response("forbidden", { status: 403 });
-    }
-
+    // Telegram only ever POSTs. There is no subscription handshake to answer:
+    // the webhook is registered once, out of band, with a setWebhook call.
     if (request.method !== "POST") return new Response("method not allowed", { status: 405 });
 
-    const raw = await request.text();
-    if (!(await signatureValid(raw, request.headers.get("x-hub-signature-256"), env.META_APP_SECRET))) {
-      return new Response("bad signature", { status: 401 });
+    if (!tokenValid(request.headers.get("x-telegram-bot-api-secret-token"), env.TELEGRAM_SECRET)) {
+      return new Response("bad token", { status: 401 });
     }
 
-    let payload;
-    try { payload = JSON.parse(raw); } catch { return new Response("bad json", { status: 400 }); }
+    let update;
+    try { update = await request.json(); } catch { return new Response("bad json", { status: 400 }); }
 
-    const allowed = (env.ALLOWED_NUMBERS || "")
-      .split(",").map((s) => s.replace(/\D/g, "")).filter(Boolean);
+    // Edits and channel posts are ignored: only a plain new message counts.
+    const msg = update.message;
+    if (msg?.text && msg.from && msg.chat) {
+      const allowed = (env.ALLOWED_USERS || "")
+        .split(",").map((s) => s.trim()).filter(Boolean);
 
-    for (const entry of payload.entry || []) {
-      for (const change of entry.changes || []) {
-        for (const msg of change.value?.messages || []) {
-          if (msg.type !== "text") continue;
-          // Second gate. A valid signature only proves Meta sent it, not who
-          // wrote it — anyone who finds the number could message the bot.
-          if (!allowed.includes(String(msg.from).replace(/\D/g, ""))) {
-            console.warn("rejected sender", msg.from);
-            continue;
-          }
-          // Acknowledge inside 20s or Meta retries the whole delivery.
-          ctx.waitUntil(
-            handleMessage(env, msg.from, msg.text.body).catch(async (err) => {
-              console.error(err);
-              await reply(env, msg.from,
-                "Something went wrong on my end and nothing was changed. Try again in a moment.");
-            })
-          );
-        }
+      if (allowed.includes(String(msg.from.id))) {
+        // Acknowledge quickly or Telegram redelivers the whole update.
+        ctx.waitUntil(
+          handleMessage(env, msg.chat.id, msg.text).catch(async (err) => {
+            console.error(err);
+            await reply(env, msg.chat.id,
+              "Something went wrong on my end and nothing was changed. Try again in a moment.");
+          })
+        );
+      } else {
+        // Anyone who finds the bot can message it, so this is a real gate and
+        // not a formality. Logged so a new controller's id can be read out of
+        // `wrangler tail` and added to ALLOWED_USERS.
+        console.warn("rejected sender", msg.from.id, msg.from.username || "(no username)");
       }
     }
 

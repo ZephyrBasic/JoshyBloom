@@ -1,5 +1,5 @@
 /* Regenerates the event list in calendar.html from data/events.json.
-   The WhatsApp controller does exactly this in the Worker, using the same
+   The Telegram controller does exactly this in the Worker, using the same
    renderer — this is the local equivalent for editing events by hand.
 
      node tools/build-calendar.mjs          write

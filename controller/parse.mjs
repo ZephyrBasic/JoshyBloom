@@ -1,4 +1,4 @@
-/* Parses the WhatsApp messages Joshy sends into event objects.
+/* Parses the Telegram messages Joshy sends into event objects.
 
    Deliberately deterministic — no model call, no network, no dependencies.
    Everything it understands is listed in `helpText()`, and every parse is
