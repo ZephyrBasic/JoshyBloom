@@ -8,8 +8,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { parseCommand, parseDate, helpText } from "./parse.mjs";
-import { patchCalendar, formatDate, sortEvents } from "../tools/render-events.mjs";
+import { parseCommand, parseDate, parseDateRange, sortHint, helpText } from "./parse.mjs";
+import { patchCalendar, formatDate, formatRange, sortEvents } from "../tools/render-events.mjs";
 import { apply, listText, normalise } from "./worker.js";
 import worker from "./worker.js";
 
@@ -47,6 +47,49 @@ test("date formats Joshy might actually type", () => {
 
 test("day comes before month, Australian style", () => {
   assert.equal(parseDate("3/4/2026", TODAY).date, "2026-04-03");
+});
+
+test("a range written as one date line, the way Joshy actually types it", () => {
+  const ok = (input, date, until) => {
+    const r = parseDateRange(input, TODAY);
+    assert.deepEqual({ date: r.date, until: r.until }, { date, until }, input);
+  };
+
+  ok("28 Sept - 4 Oct", "2026-09-28", "2026-10-04");
+  ok("28 Sept – 4 Oct", "2026-09-28", "2026-10-04");
+  ok("28 Sep 2026 - 4 Oct 2026", "2026-09-28", "2026-10-04");
+  ok("28/09/26 - 4/10/26", "2026-09-28", "2026-10-04");
+  ok("28/09/26-4/10/26", "2026-09-28", "2026-10-04");
+  ok("28 Sept to 4 Oct", "2026-09-28", "2026-10-04");
+  ok("2026-09-28 - 2026-10-04", "2026-09-28", "2026-10-04");
+
+  // The end resolves against the start, so a run over new year ends in it.
+  ok("28 Dec - 4 Jan", "2026-12-28", "2027-01-04");
+});
+
+test("a lone date is still read whole, hyphens and all", () => {
+  // Would be split into nonsense if the range separator were tried first.
+  assert.equal(parseDateRange("2026-08-22", TODAY).date, "2026-08-22");
+  assert.equal(parseDateRange("22-8", TODAY).date, "2026-08-22");
+  assert.equal(parseDateRange("22 Aug", TODAY).until, undefined);
+  assert.equal(parseDateRange("tba", TODAY).tba, true);
+  // A misread stays the plain single-date complaint, not a range one.
+  assert.match(parseDateRange("next tuesday", TODAY).error, /couldn't read/);
+});
+
+test("a backwards range is refused rather than stored", () => {
+  assert.match(parseDateRange("4 Oct 2026 - 28 Sept 2026", TODAY).error, /before/);
+});
+
+test("the date line accepts a range, and says so when it can't read one", () => {
+  const c = parseCommand("edit 5\nDate: 28 Sept - 4 Oct", TODAY);
+  assert.equal(c.cmd, "edit");
+  assert.equal(c.event.date, "2026-09-28");
+  assert.equal(c.event.until, "2026-10-04");
+
+  // The dead end Joshy hit: a date line it can't read is no longer refused,
+  // and the help says how to write a run.
+  assert.match(helpText(), /28 Sept - 4 Oct/);
 });
 
 /* --- parsing ------------------------------------------------------------ */
@@ -184,6 +227,41 @@ test("an unannounced date asserts nothing", () => {
   const html = patchCalendar(calendarHtml, [{ sort: "2026-12-01", display: "Dec — TBA", title: "X" }]);
   assert.match(html, /<p class="event__date" data-sort="2026-12-01">Dec — TBA<\/p>/);
   assert.ok(!/datetime="2026-12-01"/.test(html));
+});
+
+test("a run shows both ends, without repeating what they share", () => {
+  assert.equal(formatRange("2026-08-28", "2026-08-30"), "28–30 Aug 2026");
+  assert.equal(formatRange("2026-09-28", "2026-10-04"), "28 Sept – 4 Oct 2026");
+  assert.equal(formatRange("2026-12-28", "2027-01-04"), "28 Dec 2026 – 4 Jan 2027");
+
+  const html = patchCalendar(calendarHtml, [
+    { date: "2026-09-28", until: "2026-10-04", title: "Residue" },
+  ]);
+  assert.match(html, /datetime="2026-09-28" data-until="2026-10-04">28 Sept – 4 Oct 2026</);
+});
+
+test("a placeholder date doesn't outlive the date it stood in for", () => {
+  // The exact stuck entry: a real date arrives, but "Late Sept — TBA" is what
+  // the page keeps printing until the placeholder is cleared with it.
+  const seeded = [{
+    id: "late-sept-exhibition", sort: "2026-09-30",
+    display: "Late Sept — TBA", title: "Residue", kind: "Exhibition",
+  }];
+  const cmd = parseCommand("edit 1\ndate: 28 Sept - 4 Oct", TODAY);
+  const { events, text } = apply(cmd, seeded, TODAY);
+
+  assert.equal(events[0].display, undefined);
+  assert.equal(events[0].sort, undefined);
+  assert.equal(events[0].until, "2026-10-04");
+  // What Joshy is told must be what the page shows.
+  assert.match(text, /28 Sept – 4 Oct 2026/);
+  assert.match(patchCalendar(calendarHtml, events), /28 Sept – 4 Oct 2026/);
+});
+
+test("a display Joshy sets himself survives a date change", () => {
+  const seeded = [{ id: "x", date: "2026-09-01", display: "Spring", title: "X" }];
+  const cmd = parseCommand("edit 1\ndate: 2 Sept\ndisplay: Later in Spring", TODAY);
+  assert.equal(apply(cmd, seeded, TODAY).events[0].display, "Later in Spring");
 });
 
 test("patching is idempotent", () => {
@@ -368,4 +446,143 @@ test("a GitHub failure tells Joshy nothing changed", async () => {
 
   assert.equal(sent.commits.length, 0);
   assert.match(sent.replies.at(-1), /nothing was changed/);
+});
+
+/* --- date: is what the page shows --------------------------------------- */
+
+test("a date line it can't read is shown as written, not refused", () => {
+  const c = parseCommand("add\ndate: Late Sept — TBA\ntitle: Residue", TODAY);
+  assert.equal(c.cmd, "add");
+  assert.equal(c.event.display, "Late Sept — TBA");
+  // Nothing machine-readable is invented for words.
+  assert.equal(c.event.date, undefined);
+  // Said out loud rather than silently accepted.
+  assert.match(c.warnings.join(" "), /as written/);
+});
+
+test("words still order the entry by the month they name", () => {
+  // Reproduces the sort key this entry was given by hand.
+  assert.equal(sortHint("Late Sept — TBA", TODAY), "2026-09-30");
+  assert.equal(sortHint("early March", TODAY), "2027-03-01");
+  assert.equal(sortHint("mid Nov", TODAY), "2026-11-15");
+  assert.equal(sortHint("sometime around 12 Oct", TODAY), "2026-10-12");
+  assert.equal(sortHint("no month in here", TODAY), null);
+});
+
+test("a worded date renders without asserting a date", () => {
+  const c = parseCommand("add\ndate: Late Sept — TBA\ntitle: Residue", TODAY);
+  const html = patchCalendar(calendarHtml, [c.event]);
+  assert.match(html, /<p class="event__date" data-sort="2026-09-30">Late Sept — TBA<\/p>/);
+  assert.ok(!/datetime="2026-09-30"/.test(html));
+});
+
+test("swapping a real date for words takes the machine claim down with it", () => {
+  const seeded = [{ id: "x", date: "2026-08-28", until: "2026-08-30",
+                    display: "28–30 Aug 2026", title: "Common Ground" }];
+  const { events } = apply(parseCommand("edit 1\ndate: Late Sept — TBA", TODAY), seeded, TODAY);
+
+  assert.equal(events[0].display, "Late Sept — TBA");
+  assert.equal(events[0].sort, "2026-09-30");
+  assert.equal(events[0].date, undefined);
+  assert.equal(events[0].until, undefined);
+});
+
+test("a new single date doesn't leave the old run's end behind", () => {
+  const seeded = [{ id: "x", date: "2026-08-28", until: "2026-08-30",
+                    display: "28–30 Aug 2026", title: "Common Ground" }];
+  const { events } = apply(parseCommand("edit 1\ndate: 5 Sept", TODAY), seeded, TODAY);
+
+  assert.equal(events[0].date, "2026-09-05");
+  assert.equal(events[0].until, undefined);
+  assert.equal(events[0].display, undefined);
+});
+
+test("date: is echoed back as what the page will show", () => {
+  const { text } = apply(parseCommand("add\ndate: Late Sept — TBA\ntitle: Residue", TODAY), [], TODAY);
+  assert.match(text, /Late Sept — TBA — Residue/);
+});
+
+/* --- the labels Joshy calls the fields by -------------------------------- */
+
+const ARTS_FACTORY = [
+  "add",
+  "date: 24 Oct 2026",
+  "title: In Dog We Trust (A Bit Grim III)",
+  "role: Band",
+  "with: O.R.B, EXEK, Screensaver, & more",
+  "where: The Arts Factory, Byron Bay",
+  "time: 1pm",
+  "link: https://tickets.oztix.com.au/outlet/event/04ab",
+  "event: gig",
+].join("\n");
+
+test("every label lands in its own field", () => {
+  const c = parseCommand(ARTS_FACTORY, TODAY);
+  assert.equal(c.cmd, "add");
+  assert.deepEqual(c.event, {
+    date: "2026-10-24",
+    title: "In Dog We Trust (A Bit Grim III)",
+    role: "Band",
+    lineup: "O.R.B, EXEK, Screensaver, & more",
+    where: "The Arts Factory, Byron Bay",
+    time: "1pm",
+    link: "https://tickets.oztix.com.au/outlet/event/04ab",
+    kind: "Performance",
+    id: "in-dog-we-trust-a-bit-grim-iii-2026-10-24",
+  });
+  assert.deepEqual(c.warnings, []);
+});
+
+test("every field lands in the class the page styles", () => {
+  const html = patchCalendar(calendarHtml, [parseCommand(ARTS_FACTORY, TODAY).event]);
+
+  assert.match(html, /<time class="event__date" datetime="2026-10-24">24 Oct 2026<\/time>/);
+  assert.match(html, /<h3 class="event__title">In Dog We Trust \(A Bit Grim III\)<\/h3>/);
+  assert.match(html, /<p class="event__role">Band<\/p>/);
+  assert.match(html, /<p class="event__lineup">O\.R\.B, EXEK, Screensaver, &amp; more<\/p>/);
+  assert.match(html, /<p class="event__where">The Arts Factory, Byron Bay<\/p>/);
+  assert.match(html, /<p class="event__time">1pm<\/p>/);
+  assert.match(html, /<p class="event__kind">Performance<\/p>/);
+  // The time reads after the venue, where the page has always put it.
+  assert.ok(html.indexOf("event__where") < html.indexOf("event__time"));
+  assert.ok(html.indexOf("event__time") < html.indexOf("event__link"));
+});
+
+test("time is its own field, no longer part of details", () => {
+  const c = parseCommand("add\ndate: 24 Oct 2026\ntitle: X\ntime: 1pm\ndetails: $15, over 18s", TODAY);
+  assert.equal(c.event.time, "1pm");
+  assert.equal(c.event.details, "$15, over 18s");
+
+  const html = patchCalendar(calendarHtml, [c.event]);
+  assert.match(html, /<p class="event__time">1pm<\/p>/);
+  assert.match(html, /<p class="event__details">\$15, over 18s<\/p>/);
+});
+
+test("a time can be a range, however it's written", () => {
+  const t = (input) =>
+    parseCommand(`add\ndate: 24 Oct 2026\ntitle: X\ntime: ${input}`, TODAY).event.time;
+
+  assert.equal(t("1pm"), "1pm");
+  assert.equal(t("1PM"), "1pm");
+  assert.equal(t("1:30 pm"), "1:30pm");
+  assert.equal(t("13:00"), "1pm");
+  assert.equal(t("12am"), "12am");
+  assert.equal(t("1pm - 4pm"), "1pm – 4pm");
+  assert.equal(t("1pm to 4pm"), "1pm – 4pm");
+  assert.equal(t("6pm–10pm"), "6pm – 10pm");
+  assert.equal(t("18:00 - 22:00"), "6pm – 10pm");
+  // Anything it can't read is Joshy's wording, kept as typed.
+  assert.equal(t("doors 6pm, band 9pm"), "doors 6pm, band 9pm");
+});
+
+test("event: names the kind, which is the word the page prints", () => {
+  const c = parseCommand("add\ndate: 24 Oct 2026\ntitle: Residue\nevent: exhibition", TODAY);
+  assert.equal(c.event.kind, "Exhibition");
+  assert.equal(c.event.title, "Residue");
+});
+
+test("the reply reads back the time along with the rest", () => {
+  const { text } = apply(parseCommand(ARTS_FACTORY, TODAY), [], TODAY);
+  assert.match(text, /24 Oct 2026 — In Dog We Trust \(A Bit Grim III\)/);
+  assert.match(text, /The Arts Factory, Byron Bay · Band · 1pm/);
 });

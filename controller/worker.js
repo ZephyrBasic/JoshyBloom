@@ -12,7 +12,7 @@
 */
 
 import { parseCommand, helpText, todayInBrisbane } from "./parse.mjs";
-import { patchCalendar, sortEvents, formatDate, endDate } from "../tools/render-events.mjs";
+import { patchCalendar, sortEvents, formatDate, formatRange, endDate } from "../tools/render-events.mjs";
 import { repoClient } from "./github.mjs";
 
 const API = "https://api.telegram.org";
@@ -69,8 +69,10 @@ export function normalise(text) {
 /* --- presentation ------------------------------------------------------- */
 
 const describe = (e) => {
-  const when = e.display || formatDate(e.date) || "TBA";
-  const bits = [e.where, e.role, e.details].filter(Boolean);
+  // Same rule the page uses, so the reply is never a different claim.
+  const when = e.display || (e.until && e.date && formatRange(e.date, e.until)) ||
+               formatDate(e.date) || "TBA";
+  const bits = [e.where, e.role, e.time, e.details].filter(Boolean);
   return `${when} — ${e.title}${bits.length ? `\n   ${bits.join(" · ")}` : ""}`;
 };
 
@@ -121,8 +123,22 @@ export function apply(command, events, today) {
       text = `Removed:\n\n${describe(target)}`;
     } else {
       const updated = { ...target, ...command.event };
-      // A changed date invalidates an unconfirmed-date entry's ordering hint.
-      if (command.event.date) delete updated.sort;
+      // A new date line replaces the old one whole. Anything the previous one
+      // left behind — the ordering hint, the wording shown in its place, the
+      // end of a run that is no longer a run — would otherwise outlive it and
+      // keep being shown, since the page prefers all three over the date.
+      // Wording Joshy sets himself in the same message is his own and stays.
+      if (command.event.date) {
+        delete updated.sort;
+        if (!command.event.display) delete updated.display;
+        if (!command.event.until) delete updated.until;
+      }
+      if (command.event.sort) {
+        // Words order the entry but assert nothing, so the machine-readable
+        // claim they replace has to come down with it.
+        delete updated.date;
+        if (!command.event.until) delete updated.until;
+      }
       next[at] = updated;
       text = `Updated:\n\n${describe(updated)}`;
     }

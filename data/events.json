@@ -28,9 +28,10 @@
     "kind": "Performance",
     "role": "Solo",
     "where": "Ventspace, South Brisbane",
-    "details": "5pm ~ Free Event",
+    "details": "Free Event",
     "link": "https://facebook.com/events/s/music-jam-night-at-ventspace/1988278721849766/",
-    "lineup": "with NoendingVe, DDink, Rose Eden"
+    "lineup": "with NoendingVe, DDink, Rose Eden",
+    "time": "5pm"
   },
   {
     "id": "under-my-house",
@@ -38,8 +39,9 @@
     "title": "‘Under My House’ Art Show",
     "kind": "Exhibition",
     "where": "East Brisbane",
-    "details": "6pm - 10pm // Free Entry",
-    "link": "https://www.instagram.com/p/DcVVT9EJPxl/?igsi=NnFpeGx4cGNmOHJ0"
+    "details": "Free Entry",
+    "link": "https://www.instagram.com/p/DcVVT9EJPxl/?igsi=NnFpeGx4cGNmOHJ0",
+    "time": "6pm – 10pm"
   },
   {
     "id": "late-sept-exhibition",
@@ -58,9 +60,9 @@
     "kind": "Performance",
     "role": "Band",
     "where": "The Arts Factory, Byron Bay",
-    "details": "1pm",
     "lineup": "O.R.B, EXEK, Screensaver, & more",
-    "link": "https://tickets.oztix.com.au/outlet/event/04ab7fa7-12c8-496c-8aa7-001469a39b92"
+    "link": "https://tickets.oztix.com.au/outlet/event/04ab7fa7-12c8-496c-8aa7-001469a39b92",
+    "time": "1pm"
   },
   {
     "id": "in-dog-we-trust-norman-park",

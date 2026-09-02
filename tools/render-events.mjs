@@ -23,6 +23,22 @@ export function formatDate(iso) {
   return `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}`;
 }
 
+/** "2026-09-28" + "2026-10-04" -> "28 Sept – 4 Oct 2026". Whatever both
+    ends share is stated once, which is how the runs already on the page were
+    written by hand. Falls back to the start alone if either end is unusable. */
+export function formatRange(from, to) {
+  const a = /^(\d{4})-(\d{2})-(\d{2})$/.exec(from || "");
+  const b = /^(\d{4})-(\d{2})-(\d{2})$/.exec(to || "");
+  if (!a || !b) return formatDate(from);
+
+  const day = (m) => Number(m[3]);
+  const month = (m) => MONTHS[Number(m[2]) - 1];
+
+  if (a[1] === b[1] && a[2] === b[2]) return `${day(a)}–${day(b)} ${month(a)} ${a[1]}`;
+  if (a[1] === b[1]) return `${day(a)} ${month(a)} – ${day(b)} ${month(b)} ${a[1]}`;
+  return `${formatDate(from)} – ${formatDate(to)}`;
+}
+
 /** Ordering key. A confirmed `date` and an unconfirmed `sort` rank the same;
     only `date` is ever asserted in the markup. Undated entries trail. */
 const sortKey = (e) => e.date || e.sort || null;
@@ -42,7 +58,11 @@ export function sortEvents(events) {
 export const endDate = (e) => e.until || e.date || null;
 
 function renderDate(e) {
-  const text = escapeHtml(e.display || formatDate(e.date) || "TBA");
+  // A run with no display of its own describes itself, rather than printing
+  // its first day and hiding the rest in an attribute.
+  const text = escapeHtml(
+    e.display || (e.until && e.date && formatRange(e.date, e.until)) || formatDate(e.date) || "TBA"
+  );
   const until = e.until ? ` data-until="${escapeHtml(e.until)}"` : "";
 
   // A <time datetime> is a machine-readable claim that the event happens on
@@ -63,6 +83,7 @@ export function renderEvent(e) {
   body += line("event__role", e.role);
   body += line("event__lineup", e.lineup);
   body += line("event__where", e.where);
+  body += line("event__time", e.time);
   body += line("event__details", e.details);
   if (e.link) {
     body += `            <a class="event__link" rel="noopener"\n` +
