@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { parseCommand, parseDate, parseDateRange, sortHint, helpText } from "./parse.mjs";
+import { parseCommand, parseDate, parseDateRange, sortHint, parseLink, helpText } from "./parse.mjs";
 import { patchCalendar, formatDate, formatRange, sortEvents } from "../tools/render-events.mjs";
 import { apply, listText, normalise } from "./worker.js";
 import worker from "./worker.js";
@@ -585,4 +585,48 @@ test("the reply reads back the time along with the rest", () => {
   const { text } = apply(parseCommand(ARTS_FACTORY, TODAY), [], TODAY);
   assert.match(text, /24 Oct 2026 — In Dog We Trust \(A Bit Grim III\)/);
   assert.match(text, /The Arts Factory, Byron Bay · Band · 1pm/);
+});
+
+/* --- links Joshy pastes -------------------------------------------------- */
+
+test("a link pasted with its share text still points at the link", () => {
+  // What Eventbrite's share button actually gives you: the title, then the URL.
+  const c = parseCommand([
+    "edit 1",
+    "link: Residue Opening Night https://www.eventbrite.com.au/e/residue-tickets-199?aff=x&utm-medium=discovery",
+  ].join("\n"), TODAY);
+
+  assert.equal(c.event.link,
+    "https://www.eventbrite.com.au/e/residue-tickets-199?aff=x&utm-medium=discovery");
+  // The words are dropped, but said out loud rather than silently.
+  assert.match(c.warnings.join(" "), /Residue Opening Night/);
+});
+
+test("the link forms that already worked still work", () => {
+  const link = (v) => parseCommand(`edit 1\nlink: ${v}`, TODAY).event.link;
+
+  assert.equal(link("https://facebook.com/events/123"), "https://facebook.com/events/123");
+  assert.equal(link("facebook.com/events/123"), "https://facebook.com/events/123");
+  assert.equal(link("www.eventbrite.com.au/e/x"), "https://www.eventbrite.com.au/e/x");
+  assert.equal(link("http://example.org/a"), "http://example.org/a");
+  // A URL after the words, not before them.
+  assert.equal(link("https://example.org/a — tickets here"), "https://example.org/a");
+});
+
+test("a link line with no link in it sets no link", () => {
+  const c = parseCommand("edit 1\nlink: ask me closer to the day", TODAY);
+  assert.equal(c.cmd, "error");
+  assert.match(c.message, /couldn't find a link/i);
+
+  // Alongside a real change, the rest of the edit still goes through.
+  const b = parseCommand("edit 1\nwhere: Milton\nlink: ask me closer to the day", TODAY);
+  assert.equal(b.event.link, undefined);
+  assert.equal(b.event.where, "Milton");
+  assert.match(b.warnings.join(" "), /couldn't find a link/i);
+});
+
+test("the broken link already on the page repairs to the right URL", () => {
+  const stored = "https://Residue Opening Night https://www.eventbrite.com.au/e/residue-opening-night-tickets-1999147673507?utm-campaign=social&aff=ebdsshwebmobile";
+  assert.equal(parseLink(stored).url,
+    "https://www.eventbrite.com.au/e/residue-opening-night-tickets-1999147673507?utm-campaign=social&aff=ebdsshwebmobile");
 });

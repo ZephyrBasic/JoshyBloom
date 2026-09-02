@@ -243,6 +243,39 @@ export function parseTime(input) {
   return { text: raw, read: false };
 }
 
+/**
+ * Pulls the link out of a `link:` line.
+ *
+ * Joshy pastes share text at least as often as a bare URL — "Residue Opening
+ * Night https://…" is exactly what Eventbrite's share button hands you — so
+ * the line is searched for a URL rather than assumed to be one. Taking the
+ * whole line and prefixing a scheme to it is what produced
+ * "https://Residue Opening Night https://www.eventbrite.com…".
+ *
+ * A bare domain still gets its scheme, which is the form the help text shows.
+ *
+ * @returns {{url: string|null, extra: string}} the link, and any words around it
+ */
+export function parseLink(input) {
+  const raw = String(input || "").trim();
+
+  // A scheme wins wherever in the line it appears — but only where what
+  // follows is host-shaped. The value this replaced began "https://Residue",
+  // which is a perfectly good scheme match and a useless link.
+  const hostShaped = (u) => /^https?:\/\/[^/?#\s]*\.[^/?#\s]/i.test(u);
+  for (const found of raw.matchAll(/https?:\/\/\S+/gi)) {
+    if (hostShaped(found[0])) {
+      return { url: found[0], extra: raw.replace(found[0], " ").trim() };
+    }
+  }
+
+  // Otherwise a bare domain: dotted, no spaces, and a real-looking TLD, so
+  // ordinary prose ("ask me", "e.g") is not mistaken for one.
+  const m = /(?:www\.)?[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.[a-z]{2,}(?:[/?#]\S*)?/i.exec(raw);
+  if (!m) return { url: null, extra: raw };
+  return { url: `https://${m[0]}`, extra: raw.replace(m[0], " ").trim() };
+}
+
 const KINDS = {
   performance: "Performance", perform: "Performance", gig: "Performance",
   music: "Performance", band: "Performance", set: "Performance",
@@ -362,7 +395,16 @@ export function parseCommand(text, today = todayInBrisbane()) {
            event.kind = fields.kind;
     }
 
-    if (event.link && !/^https?:\/\//i.test(event.link)) event.link = `https://${event.link}`;
+    if (fields.link) {
+      const { url, extra } = parseLink(fields.link);
+      if (url) {
+        event.link = url;
+        if (extra) warnings.push(`Used the link and ignored "${extra}".`);
+      } else {
+        delete event.link;
+        warnings.push(`I couldn't find a link in "${fields.link}", so I left it alone.`);
+      }
+    }
 
     if (!isEdit) {
       if (!event.title) {
@@ -376,7 +418,14 @@ export function parseCommand(text, today = todayInBrisbane()) {
       if (!event.kind) event.kind = event.role ? "Performance" : "Exhibition";
       event.id = `${slugify(event.title)}-${event.date || event.sort}`;
     } else if (!Object.keys(event).length) {
-      return { cmd: "error", message: `Nothing to change. Add lines like "where: New venue".` };
+      // If a line was understood but came to nothing — a `link:` with no link
+      // in it — the reason is more use than the generic prompt.
+      return {
+        cmd: "error",
+        message: warnings.length
+          ? warnings.join("\n")
+          : `Nothing to change. Add lines like "where: New venue".`,
+      };
     }
 
     return { cmd: isEdit ? "edit" : "add", event, index, warnings };
